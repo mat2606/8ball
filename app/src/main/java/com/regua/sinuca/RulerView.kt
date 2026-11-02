@@ -31,11 +31,12 @@ class RulerView(c: Context) : View(c) {
     private val bounceDot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFEB3B.toInt(); style = Paint.Style.FILL }
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        val loc = IntArray(2); getLocationOnScreen(loc)
         val def = arrayOf(.16f to .2f, .84f to .88f, .3f to .5f, .5f to .5f)
         for (i in 0..3) {
             val x = prefs.getFloat("x$i", -1f); val y = prefs.getFloat("y$i", -1f)
-            if (x in 0f..w.toFloat() && y in 0f..h.toFloat()) pts[i].set(x, y)
-            else pts[i].set(w * def[i].first, h * def[i].second)
+            if (x in 0f..(w + loc[0]).toFloat() && y in 0f..(h + loc[1]).toFloat()) pts[i].set(x, y)
+            else pts[i].set(w * def[i].first + loc[0], h * def[i].second + loc[1])
         }
         onReady?.invoke(); onReady = null
     }
@@ -43,6 +44,9 @@ class RulerView(c: Context) : View(c) {
     fun save() = prefs.edit().apply { for (i in 0..3) { putFloat("x$i", pts[i].x); putFloat("y$i", pts[i].y) } }.apply()
 
     override fun onDraw(c: Canvas) {
+        // pts estão em coordenadas absolutas da tela; converte para a janela desta view
+        val loc = IntArray(2); getLocationOnScreen(loc)
+        c.translate(-loc[0].toFloat(), -loc[1].toFloat())
         val l = minOf(pts[0].x, pts[1].x); val r = maxOf(pts[0].x, pts[1].x)
         val t = minOf(pts[0].y, pts[1].y); val b = maxOf(pts[0].y, pts[1].y)
         val cue = pts[2]
